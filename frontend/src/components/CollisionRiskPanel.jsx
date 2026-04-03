@@ -60,7 +60,7 @@ export default function CollisionRiskPanel({ sat1, sat2, onClose, onPredictionUp
   };
 
   return (
-    <div className="glass-panel alert-panel" style={{ position: 'absolute', bottom: '45px', left: '50%', transform: 'translateX(-50%)', borderTop: `4px solid ${riskColor}`, minWidth: '450px' }}>
+    <div className="glass-panel alert-panel" style={{ position: 'absolute', bottom: '45px', left: '20px', borderTop: `4px solid ${riskColor}`, minWidth: '450px' }}>
       <button className="close-btn" onClick={onClose}><X size={20} /></button>
       <h2 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: riskColor }}>
         <AlertTriangle size={24} /> ML Collision Assessment
