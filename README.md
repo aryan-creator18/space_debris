@@ -1,292 +1,84 @@
-# 🛰️ Space Debris Analysis & Prediction Dashboard
+# 🛰️ Space Debris Analysis & Prediction Dashboard (Vibe Coding Edition)
 
-An interactive web-based platform for modeling, visualizing, and predicting satellite orbits and collision risks using machine learning. Built with React, Three.js, and Flask.
+An ultra-modern, high-performance WebGL dashboard for tracking, modeling, and analyzing Low Earth Orbit (LEO) satellite trajectories and collision probabilities. Built for aerospace hackathons, this platform combines hard Data Science (pandas, XGBoost-ready ML integration, Keplerian Physics) with a breathtaking React `globe.gl` cinematic UI.
 
-![Dashboard Preview](https://img.shields.io/badge/Status-Active-success)
+![Dashboard Preview](https://img.shields.io/badge/Status-Hackathon_Ready-success)
 ![Python](https://img.shields.io/badge/Python-3.8+-blue)
 ![React](https://img.shields.io/badge/React-18.2-61dafb)
-![License](https://img.shields.io/badge/License-MIT-green)
+![Vite](https://img.shields.io/badge/Vite-Live_HMR-purple)
+![Deployment](https://img.shields.io/badge/Deploy-Vercel%20%7C%20Render-black)
 
-![WhatsApp Image 2025-12-07 at 22 21 03_f63d5e1c](https://github.com/user-attachments/assets/0934813f-a082-4c5d-9bf3-9a1925252fad)
+## 🌟 Core Features
 
-## 🌟 Features
+### 🌍 Cinematic 3D Global Tracking
+*   **WebGL React Globe**: GPU-accelerated massive rendering of hundreds of active tracking nodes without frame drops.
+*   **Dual-Speed Animation Engine**: Toggle between "HyperSpeed" (6 seconds per revolution) and "Real Time" (90 minutes per revolution) Newtonian scaling.
+*   **Focus Target Lock**: Instant, smooth cinematic camera fly-to animations when selecting a specific tracking footprint.
+*   **Dynamic UI Filtration**: Clutter-clearing Focus Mode to visually isolate specific impending collision trajectories.
 
-### 📊 Interactive 3D Visualization
-- Real-time rotating Earth model with accurate scale
-- Multiple satellite orbit paths with color coding
-- Grid system and axis helpers (X, Y, Z)
-- Distance reference rings (7000km, 10000km)
-- Mouse controls: drag to rotate, scroll to zoom
-- Hover tooltips showing exact coordinates
-- Camera position tracking
+### 🔬 Hard Aerospace Analytics
+*   **Orbital Decay Predictor**: Calculates Ballistic Coefficient averages across live Altitude to forecast atmospheric burn-up (e.g., `< 1 Year (Critical)` to `> 1000 Years (Stable)`).
+*   **Kinetic Energy Math**: Converts standard velocity telemetry into real-world structural impact force ($E_k = \frac{1}{2}mv^2$) in MegaJoules (MJ).
+*   **Live CelesTrak Fetching**: Dual-pipeline backend that queries live GP APIs for space-track intelligence, with an instant 9,669-item Local CSV Data Science Fallback to prevent network failure during live pitches.
 
-### 🎛️ Control Panel
-- System status monitoring (LSTM & XGBoost models)
-- Dataset statistics (total satellites, records)
-- Multi-satellite selection with color indicators
-- Add/remove satellites dynamically
-- Visual satellite list with color-coded orbits
-
-### 🤖 Machine Learning Predictions
-
-#### Trajectory Forecasting
-- 24-hour position prediction using LSTM
-- Outputs X, Y, Z coordinates in kilometers
-- Satellite-specific trajectory analysis
-
-#### Collision Risk Assessment
-- Compare any two satellites
-- Calculate distance between orbits
-- Predict collision probability (0-100%)
-- Risk level classification (HIGH/MEDIUM/LOW)
-- Color-coded risk indicators
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.8 or higher
-- Node.js 16 or higher
-- npm (comes with Node.js)
-
-### Installation & Setup
-
-#### Option 1: Automated Setup (Recommended)
-```bash
-# Windows PowerShell
-.\setup-and-start.ps1
-
-# This will:
-# - Check Python and Node.js
-# - Install all dependencies
-# - Start both backend and frontend
-```
-
-#### Option 2: Manual Setup
-```bash
-# 1. Install Backend Dependencies
-cd backend
-pip install -r requirements.txt
-
-# 2. Install Frontend Dependencies
-cd ../frontend
-npm install
-
-# 3. Start Backend (Terminal 1)
-cd backend
-python app.py
-# Backend runs on http://localhost:5000
-
-# 4. Start Frontend (Terminal 2)
-cd frontend
-npm start
-# Frontend runs on http://localhost:3000
-```
-
-#### Option 3: Standalone Version (No npm required)
-```bash
-cd backend
-python app.py
-# Then open standalone/index.html in your browser
-```
-
-### Verify Installation
-```bash
-python check_setup.py
-```
-
-## 📖 Usage Guide
-
-### Basic Workflow
-1. **Start the servers** (backend first, then frontend)
-2. **Add satellites** from the sidebar dropdown
-3. **View orbits** in the 3D visualization
-4. **Predict trajectories** for individual satellites
-5. **Assess collision risks** between satellite pairs
-
-### Controls
-- **🖱️ Left Click + Drag**: Rotate camera around Earth
-- **🔍 Scroll Wheel**: Zoom in/out
-- **🎯 Hover**: View coordinates on Earth surface
-
-### Adding Satellites
-1. Click the "Add satellite..." dropdown in the sidebar
-2. Select a satellite (e.g., NORAD 51)
-3. The orbit appears in the 3D view with a unique color
-4. Repeat to add more satellites (up to 4 recommended)
-
-### Trajectory Prediction
-1. Select a satellite from the dropdown or use a selected one
-2. Click "Predict Trajectory"
-3. View 24-hour position forecast (X, Y, Z coordinates)
-
-### Collision Risk Analysis
-1. Select two satellites (or use first two selected)
-2. Click "Assess Risk"
-3. View distance, probability, and risk level
-
-## 🏗️ Project Structure
-
-```
-space-debris-dashboard/
-├── backend/              # Flask API Server
-│   ├── app.py           # Main API with ML endpoints
-│   ├── requirements.txt # Python dependencies
-│   └── test_api.py      # API test suite
-│
-├── frontend/            # React Application
-│   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── App.js       # Main app
-│   │   └── index.js     # Entry point
-│   └── package.json     # npm dependencies
-│
-├── model/               # ML data files
-│   └── space_debris_with_engineered_features.csv
-│
-├── standalone/          # No-build alternative
-│   └── index.html       # Single-file dashboard
-│
-└── docs/                # Documentation
-    ├── README.md        # This file
-    ├── QUICKSTART.md    # Quick setup guide
-    ├── INSTALL.md       # Detailed installation
-    └── DEVELOPMENT.md   # Developer guide
-```
-
-## 🔧 Technology Stack
-
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| Frontend Framework | React | 18.2.0 |
-| 3D Graphics | Three.js | 0.160.0 |
-| 3D React Integration | React Three Fiber | 8.15.0 |
-| Backend Framework | Flask | 3.0.0 |
-| Data Processing | Pandas | 2.2+ |
-| Numerical Computing | NumPy | 1.26+ |
-| ML Framework | Scikit-learn | 1.4+ |
-| HTTP Client | Axios | 1.6.2 |
-
-## 📊 API Endpoints
-
-### Backend API (http://localhost:5000/api)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/status` | GET | System and model status |
-| `/satellites` | GET | List of available satellites |
-| `/orbit/<id>` | GET | Orbital trajectory data |
-| `/predict/trajectory` | POST | LSTM trajectory forecast |
-| `/predict/collision` | POST | XGBoost collision risk |
-
-## 🎨 Features in Detail
-
-### 3D Visualization
-- **Earth Model**: 6,371 km radius sphere with realistic materials
-- **Orbit Paths**: Calculated from TLE data, rendered as smooth lines
-- **Grid System**: 40,000 km grid with 20 divisions
-- **Axis Labels**: X (red), Y (green), Z (blue) with distance markers
-- **Reference Rings**: Orbital altitude indicators at 7,000 and 10,000 km
-
-### ML Models
-- **LSTM**: Recurrent neural network for time-series trajectory prediction
-- **XGBoost**: Gradient boosting for collision probability classification
-- **Features**: Orbital elements (eccentricity, inclination, semi-major axis)
-
-## 🔬 Data Format
-
-The system uses orbital elements from TLE (Two-Line Element) data:
-- NORAD Catalog ID
-- Epoch (timestamp)
-- Mean Motion
-- Eccentricity
-- Inclination
-- Right Ascension of Ascending Node
-- Argument of Perigee
-- Mean Anomaly
-
-## 🚧 Development
-
-### Running Tests
-```bash
-# Backend API tests
-cd backend
-python test_api.py
-
-# Frontend tests
-cd frontend
-npm test
-```
-
-### Building for Production
-```bash
-# Frontend build
-cd frontend
-npm run build
-# Output in frontend/build/
-
-# Backend production server
-cd backend
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 Documentation
-
-- [Quick Start Guide](QUICKSTART.md) - Get up and running fast
-- [Installation Guide](INSTALL.md) - Detailed setup instructions
-- [Development Guide](DEVELOPMENT.md) - Integrate your ML models
-- [Features Overview](FEATURES.md) - Complete feature list
-- [Project Structure](PROJECT_STRUCTURE.md) - Architecture details
-
-## 🐛 Troubleshooting
-
-### Backend won't start
-- Ensure Python 3.8+ is installed
-- Install dependencies: `pip install -r backend/requirements.txt`
-
-### Frontend won't start
-- Ensure Node.js 16+ is installed
-- Delete `node_modules` and run `npm install` again
-
-### 3D visualization not showing
-- Check browser console for errors
-- Ensure backend is running on port 5000
-- Try the standalone version
-
-### CORS errors
-- Backend must run on localhost:5000
-- Frontend on localhost:3000
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👥 Authors
-
-Built for space debris analysis and collision prevention research.
-
-## 🙏 Acknowledgments
-
-- NASA for TLE data standards
-- Three.js community for 3D graphics
-- React community for UI framework
-- Space-Track.org for orbital data
-
-## 📞 Support
-
-For issues, questions, or contributions:
-- Open an issue on GitHub
-- Check existing documentation
-- Review troubleshooting guide
+### 💥 Collision ML Assessment Panel
+*   **XGBoost Probability Vectors**: Cross-reference any two intersecting objects to calculate Minimum Orbit Intersection Distance (MOID) and yield a physical crash percentage.
+*   **Simulated Evasion Link**: Fully interactive UI allowing operators to click `[ TRANSMIT AVOIDANCE MANEUVER ]` to visually simulate thruster uplinking and orbital clearance.
+*   **Continuous Telemetry Stream**: A hacker-style `[UTC]` streaming banner routing simulated tracking hashes at the footer of the command center.
 
 ---
 
-**⚠️ Note**: This dashboard uses mock ML models for demonstration. Replace with trained models for production use. See [DEVELOPMENT.md](DEVELOPMENT.md) for integration instructions.
+## 🚀 Quick Start (Local Presentation)
+
+For live Hackathon pitches, we **strongly recommend running this locally** to ensure 0-millisecond latency when loading the large CSV datasets into pandas.
+
+### 1. Boot the Backend (Terminal 1)
+```bash
+cd backend
+pip install -r requirements.txt
+python app.py
+```
+*(Runs on port 5000)*
+
+### 2. Boot the Frontend (Terminal 2)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*(Runs on port 5173. Press `o` to instantly open in your browser)*
+
+---
+
+## ☁️ Cloud Deployment (Vercel & Render)
+
+This repository has been decoupled and configured for immediate zero-config cloud deployment.
+
+1. **Backend (Render / Railway / Heroku):**
+   *   The repository includes a `render.yaml` infrastructure file and a WSGI `Procfile`.
+   *   Connect your GitHub repo to Render, select the `backend` folder, and it will automatically deploy the Flask server using `gunicorn app:app`.
+   
+2. **Frontend (Vercel / Netlify):**
+   *   Connect the `frontend` directory to Vercel. 
+   *   In your Vercel Dashboard, create an Environment Variable: `VITE_API_URL` and set it to your new Render Cloud URL.
+   *   Vercel will dynamically re-route all Axios calls from `localhost` to the live cloud!
+
+---
+
+## 🏗️ Tech Stack
+
+| Component | Technology | Role |
+|-----------|-----------|---------|
+| **Frontend UI** | React + Vite | Lightning-fast HMR and Component State execution |
+| **3D Rendering** | react-globe.gl (Three.js) | High-performance Canvas/WebGL plotting |
+| **API Backend** | Python Flask | Lightweight routing and REST endpoints |
+| **Data Science**| Pandas, NumPy | Heavy DataFrame matrix manipulation and CSV loading |
+| **Production** | Gunicorn | WSGI threading for Cloud/Linux deployments |
+
+## 🧬 Machine Learning Pipeline
+
+Check out `finalcode.ipynb` located in the root repository to review the raw underlying data-science approach that powers this visual dashboard. It implements both LSTM (Long Short-Term Memory) network architectures for orbital extrapolation and XGBoost classifiers for collision heuristic weighting.
+
+---
+
+> *"Space isn't empty. It's getting crowded. Track it, predict it, and clean it up."*
