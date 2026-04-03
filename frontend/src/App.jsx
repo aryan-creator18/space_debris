@@ -111,7 +111,7 @@ function App() {
         lng: currentPos.lng,
         alt: currentPos.alt,
         velocity: data.info.velocity_km_s.toFixed(2),
-        riskFactor: Math.random(),
+        riskFactor: Math.min(0.99, (data.info.eccentricity * 5) + (500 / ((currentPos.alt * 6371) + 1))),
         path: path,
         info: data.info
       };
