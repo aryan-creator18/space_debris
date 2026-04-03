@@ -51,13 +51,17 @@ def fetch_live_tles():
     """Fetch active debris TLEs from CelesTrak GP data (JSON format)."""
     global _live_tles, _last_tle_fetch
     now = time.time()
-    if now - _last_tle_fetch < TLE_CACHE_SECONDS and _live_tles:
+    if now - _last_tle_fetch < TLE_CACHE_SECONDS:
         return _live_tles
+
+    # IMPORTANT: Cache the attempt time NOW, so if it fails, we still throttle for 10 minutes!
+    _last_tle_fetch = now
 
     try:
         # CelesTrak GP endpoint - active debris
         url = "https://celestrak.org/SOCRATES/query.php"
         gp_url = "https://celestrak.org/GP/query?GROUP=active&FORMAT=json"
+        import requests
         r = requests.get(gp_url, timeout=8)
         if r.status_code == 200:
             data = r.json()
@@ -67,7 +71,6 @@ def fetch_live_tles():
                 if norad:
                     tles[int(norad)] = obj
             _live_tles = tles
-            _last_tle_fetch = now
             print(f"Fetched {len(tles)} live TLEs from CelesTrak")
     except Exception as e:
         print(f"CelesTrak fetch failed: {e}")
@@ -114,9 +117,26 @@ def keplerian_to_cartesian(a, e, inc_deg, raan_deg, argp_deg, M_deg):
 
     return x, y, z
 
+def get_sma(sat_data):
+    if 'SEMI_MAJOR_AXIS' in sat_data and pd.notnull(sat_data['SEMI_MAJOR_AXIS']):
+        return float(sat_data['SEMI_MAJOR_AXIS'])
+    n = float(sat_data['MEAN_MOTION'])
+    n_rad_s = n * 2 * math.pi / (24 * 3600)
+    return (MU / (n_rad_s**2))**(1/3)
+
+def get_sat_data(sat_id):
+    live_tles = fetch_live_tles()
+    if sat_id in live_tles:
+        return live_tles[sat_id]
+    df = get_df()
+    rows = df[df['NORAD_CAT_ID'] == sat_id]
+    if not rows.empty:
+        return rows.iloc[0]
+    return None
+
 def propagate_orbit(sat_data, steps=100, total_revs=1):
     """Generate orbit points using Keplerian propagation."""
-    a = float(sat_data['SEMI_MAJOR_AXIS'])
+    a = get_sma(sat_data)
     e = float(sat_data['ECCENTRICITY'])
     inc = float(sat_data['INCLINATION'])
     raan = float(sat_data.get('RA_OF_ASC_NODE', 0))
@@ -134,7 +154,7 @@ def propagate_orbit(sat_data, steps=100, total_revs=1):
 
 def propagate_future(sat_data, hours=24):
     """Propagate satellite position forward in time (simplified)."""
-    a = float(sat_data['SEMI_MAJOR_AXIS'])
+    a = get_sma(sat_data)
     e = float(sat_data['ECCENTRICITY'])
     inc = float(sat_data['INCLINATION'])
     raan = float(sat_data.get('RA_OF_ASC_NODE', 0))
@@ -165,13 +185,13 @@ def compute_conjunction_data(sat1, sat2):
     Compute min approach distance using 360-degree orbit sampling.
     Returns distance_km, closest point on each orbit.
     """
-    a1 = float(sat1['SEMI_MAJOR_AXIS'])
+    a1 = get_sma(sat1)
     e1 = float(sat1['ECCENTRICITY'])
     inc1 = float(sat1['INCLINATION'])
     raan1 = float(sat1.get('RA_OF_ASC_NODE', 0))
     argp1 = float(sat1.get('ARG_OF_PERICENTER', 0))
 
-    a2 = float(sat2['SEMI_MAJOR_AXIS'])
+    a2 = get_sma(sat2)
     e2 = float(sat2['ECCENTRICITY'])
     inc2 = float(sat2['INCLINATION'])
     raan2 = float(sat2.get('RA_OF_ASC_NODE', 0))
@@ -268,24 +288,77 @@ def get_status():
 
 @app.route('/api/satellites', methods=['GET'])
 def get_satellites():
-    df = get_df()
-    satellites = df['NORAD_CAT_ID'].unique().tolist()
+    live_tles = fetch_live_tles()
+    if live_tles:
+        satellites = list(live_tles.keys())
+    else:
+        df = get_df()
+        satellites = df['NORAD_CAT_ID'].unique().tolist()
     return jsonify({
         'satellites': satellites[:100],
         'total': len(satellites)
     })
 
+@app.route('/api/search', methods=['GET'])
+def search_global():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({'results': []})
+        
+    results = []
+    
+    # 1. Try Live CelesTrak API
+    try:
+        import requests
+        if query.isdigit():
+            api_url = f"https://celestrak.org/NORAD/elements/gp.php?CATNR={query}&FORMAT=json"
+        else:
+            # Replace spaces for HTTP request if any
+            clean_q = query.replace(' ', '%20')
+            api_url = f"https://celestrak.org/NORAD/elements/gp.php?NAME={clean_q}&FORMAT=json"
+            
+        r = requests.get(api_url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if isinstance(data, list):
+                for obj in data[:10]: # Limit top 10
+                    cat_id = obj.get('NORAD_CAT_ID')
+                    if cat_id:
+                        cat_id = int(cat_id)
+                        _live_tles[cat_id] = obj # Cache it live!
+                        results.append({
+                            'id': str(cat_id),
+                            'name': obj.get('OBJECT_NAME', f'NORAD {cat_id}'),
+                            'type': 'Live Data'
+                        })
+                if results:
+                    return jsonify({'results': results})
+    except Exception as e:
+        print(f"Global search timeout: {e}")
+        
+    # 2. Local Fallback (Numeric ID matching since CSV has no NAME)
+    if query.isdigit():
+        df = get_df()
+        q_id = int(query)
+        rows = df[df['NORAD_CAT_ID'] == q_id]
+        if not rows.empty:
+            results.append({
+                'id': str(q_id),
+                'name': f"NORAD {q_id}",
+                'type': 'Local DB Match'
+            })
+            
+    return jsonify({'results': results})
+
 @app.route('/api/orbit/<int:sat_id>', methods=['GET'])
 def get_orbit(sat_id):
-    df = get_df()
-    rows = df[df['NORAD_CAT_ID'] == sat_id]
-    if rows.empty:
+    sat_data = get_sat_data(sat_id)
+    if sat_data is None:
         return jsonify({'error': f'Satellite {sat_id} not found'}), 404
 
-    sat_data = rows.iloc[0]
     points = propagate_orbit(sat_data, steps=200)
 
-    a = float(sat_data['SEMI_MAJOR_AXIS'])
+    a = get_sma(sat_data)
     alt = a - EARTH_RADIUS_KM
     v = math.sqrt(MU / a)
 
@@ -305,7 +378,7 @@ def get_orbit(sat_id):
         'info': {
             'inclination': round(float(sat_data['INCLINATION']), 4),
             'eccentricity': round(float(sat_data['ECCENTRICITY']), 7),
-            'period_min': round(float(sat_data['ORBITAL_PERIOD']) / 60, 2),
+            'period_min': round(1440.0 / float(sat_data['MEAN_MOTION']), 2) if 'MEAN_MOTION' in sat_data else 90.0,
             'semi_major_axis_km': round(a, 2),
             'altitude_km': round(alt, 2),
             'velocity_km_s': round(v, 3),
@@ -322,12 +395,9 @@ def predict_trajectory():
     sat_id = data.get('sat_id')
     hours = int(data.get('hours', 24))
 
-    df = get_df()
-    rows = df[df['NORAD_CAT_ID'] == sat_id]
-    if rows.empty:
+    sat_data = get_sat_data(sat_id)
+    if sat_data is None:
         return jsonify({'error': f'Satellite {sat_id} not found'}), 404
-
-    sat_data = rows.iloc[0]
 
     # Use LSTM model (currently wraps physics propagation)
     predictions = lstm_model.predict_trajectory(sat_data, hours)
@@ -336,7 +406,7 @@ def predict_trajectory():
     for i, p in enumerate(predictions):
         r = math.sqrt(p['x']**2 + p['y']**2 + p['z']**2)
         if r > 0:
-            a = float(sat_data['SEMI_MAJOR_AXIS'])
+            a = get_sma(sat_data)
             v = math.sqrt(MU * (2/r - 1/a))
             p['velocity_km_s'] = round(v, 3)
 
@@ -353,17 +423,13 @@ def predict_collision():
     sat1_id = data.get('sat1_id')
     sat2_id = data.get('sat2_id')
 
-    df = get_df()
-    rows1 = df[df['NORAD_CAT_ID'] == sat1_id]
-    rows2 = df[df['NORAD_CAT_ID'] == sat2_id]
+    sat1 = get_sat_data(sat1_id)
+    sat2 = get_sat_data(sat2_id)
 
-    if rows1.empty:
+    if sat1 is None:
         return jsonify({'error': f'Satellite {sat1_id} not found'}), 404
-    if rows2.empty:
+    if sat2 is None:
         return jsonify({'error': f'Satellite {sat2_id} not found'}), 404
-
-    sat1 = rows1.iloc[0]
-    sat2 = rows2.iloc[0]
 
     # Compute real minimum orbit intersection distance (MOID)
     min_dist, closest = compute_conjunction_data(sat1, sat2)
@@ -372,7 +438,7 @@ def predict_collision():
     features = {
         'min_distance_km': min_dist,
         'inc_diff': abs(float(sat1['INCLINATION']) - float(sat2['INCLINATION'])),
-        'sma_diff': abs(float(sat1['SEMI_MAJOR_AXIS']) - float(sat2['SEMI_MAJOR_AXIS'])),
+        'sma_diff': abs(get_sma(sat1) - get_sma(sat2)),
         'ecc1': float(sat1['ECCENTRICITY']),
         'ecc2': float(sat2['ECCENTRICITY']),
     }

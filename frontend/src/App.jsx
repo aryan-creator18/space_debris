@@ -3,6 +3,7 @@ import GlobeVisualization from './components/GlobeVisualization';
 import SatelliteInfoPanel from './components/SatelliteInfoPanel';
 import CollisionRiskPanel from './components/CollisionRiskPanel';
 import SatelliteListPanel from './components/SatelliteListPanel';
+import TelemetryTicker from './components/TelemetryTicker';
 import { Activity } from 'lucide-react';
 import axios from 'axios';
 
@@ -21,16 +22,26 @@ function App() {
   const [satellites, setSatellites] = useState([]);
   const [selectedSatellites, setSelectedSatellites] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [intersectionPoint, setIntersectionPoint] = useState(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [realTimeMode, setRealTimeMode] = useState(false);
 
   useEffect(() => {
     fetchRealData();
   }, []);
 
+  // Cleanup intersection point if satellites are deselected
+  useEffect(() => {
+    if (selectedSatellites.length < 2) {
+      setIntersectionPoint(null);
+    }
+  }, [selectedSatellites]);
+
   const fetchRealData = async () => {
     try {
       // 1. Get satellite IDs list
       const res = await axios.get(`${API_URL}/satellites`);
-      const satIds = res.data.satellites.slice(0, 30); // Limiting to 30 for performance
+      const satIds = res.data.satellites.slice(0, 100); // Increased limit to 100 for a denser visual field
       setTotalCount(res.data.total);
 
       // 2. Fetch their orbits
@@ -79,8 +90,53 @@ function App() {
     });
   };
 
+  const fetchAndAddGlobalSatellite = async (satelliteId) => {
+    const existing = satellites.find(s => s.id === satelliteId);
+    if (existing) {
+      handleSelectSatellite(existing);
+      return;
+    }
+
+    try {
+      const { data } = await axios.get(`${API_URL}/orbit/${satelliteId}`);
+      const path = data.orbit_points.map(pt => cartesianToLatLngAlt(pt[0], pt[1], pt[2]));
+      let currentPos = { lat: 0, lng: 0, alt: 0.1 };
+      if (path.length > 0) currentPos = path[0];
+
+      const newSat = {
+        id: data.sat_id.toString(),
+        name: `NORAD ${data.sat_id}`,
+        type: 'External Query',
+        lat: currentPos.lat,
+        lng: currentPos.lng,
+        alt: currentPos.alt,
+        velocity: data.info.velocity_km_s.toFixed(2),
+        riskFactor: Math.random(),
+        path: path,
+        info: data.info
+      };
+
+      setSatellites(prev => [...prev, newSat]);
+      handleSelectSatellite(newSat);
+    } catch (err) {
+      console.error("Failed to fetch global satellite orbit", err);
+      alert("Failed to track this object. Its real-time TLE data might be incomplete.");
+    }
+  };
+
   const handleCloseSat1 = () => setSelectedSatellites(prev => [prev[1]].filter(Boolean));
-  const handleCloseRisk = () => setSelectedSatellites([]);
+  const handleCloseRisk = () => {
+    setSelectedSatellites([]);
+    setIntersectionPoint(null);
+  };
+
+  const handlePredictionUpdate = (approachData) => {
+    if (approachData && approachData.sat1_position) {
+       const [x,y,z] = approachData.sat1_position;
+       const { lat, lng, alt } = cartesianToLatLngAlt(x,y,z);
+       setIntersectionPoint({ lat, lng, alt });
+    }
+  };
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
@@ -88,6 +144,9 @@ function App() {
         satellites={satellites} 
         onSelectSatellite={handleSelectSatellite} 
         selectedSatellites={selectedSatellites}
+        intersectionPoint={intersectionPoint}
+        focusMode={focusMode}
+        realTimeMode={realTimeMode}
       />
       
       <header className="glass-panel" style={{ position: 'absolute', top: '20px', left: '20px', display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 24px', maxWidth: '400px' }}>
@@ -99,6 +158,42 @@ function App() {
           </p>
           <div style={{ marginTop: '10px', fontSize: '13px', color: '#00ffaa', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
             <strong>How to use:</strong> Click on the globe or use the side list to select any two objects to calculate their real-time <strong>collision risk probability</strong> and minimum trajectory distance using our ML pipeline.
+            
+            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button 
+                  onClick={() => setFocusMode(!focusMode)}
+                  style={{
+                    padding: '6px 14px',
+                    backgroundColor: focusMode ? 'rgba(0, 216, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${focusMode ? '#00d8ff' : 'rgba(255, 255, 255, 0.2)'}`,
+                    color: focusMode ? '#00d8ff' : '#fff',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+              >
+                  {focusMode ? '🎯 FOCUS MODE: ON (Isolated)' : '👁️ FOCUS MODE: OFF (All Clutter)'}
+              </button>
+
+              <button 
+                  onClick={() => setRealTimeMode(!realTimeMode)}
+                  style={{
+                    padding: '6px 14px',
+                    backgroundColor: realTimeMode ? 'rgba(255, 170, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${realTimeMode ? '#ffaa00' : 'rgba(255, 255, 255, 0.2)'}`,
+                    color: realTimeMode ? '#ffaa00' : '#fff',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+              >
+                  {realTimeMode ? '⏱️ REAL TIME: ON (90m/rev)' : '🚀 REAL TIME: OFF (HyperSpeed)'}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -108,6 +203,7 @@ function App() {
         satellites={satellites}
         selectedSatellites={selectedSatellites}
         onSelectSatellite={handleSelectSatellite}
+        onGlobalSelect={fetchAndAddGlobalSatellite}
       />
 
       {selectedSatellites.length === 1 && (
@@ -115,8 +211,15 @@ function App() {
       )}
 
       {selectedSatellites.length === 2 && (
-        <CollisionRiskPanel sat1={selectedSatellites[0]} sat2={selectedSatellites[1]} onClose={handleCloseRisk} />
+        <CollisionRiskPanel 
+          sat1={selectedSatellites[0]} 
+          sat2={selectedSatellites[1]} 
+          onClose={handleCloseRisk}
+          onPredictionUpdate={handlePredictionUpdate} 
+        />
       )}
+
+      <TelemetryTicker />
     </div>
   );
 }

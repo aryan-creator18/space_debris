@@ -5,7 +5,7 @@ export default function SatelliteInfoPanel({ satellite, onClose }) {
   if (!satellite) return null;
 
   return (
-    <div className="glass-panel" style={{ position: 'absolute', bottom: '30px', left: '20px', width: '320px' }}>
+    <div className="glass-panel" style={{ position: 'absolute', bottom: '45px', left: '20px', width: '320px' }}>
       <button className="close-btn" onClick={onClose}><X size={20} /></button>
       <h2 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <Rocket size={24} color="#00d8ff" /> {satellite.name}
