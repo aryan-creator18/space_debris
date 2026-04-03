@@ -10,9 +10,11 @@ export default function CollisionRiskPanel({ sat1, sat2, onClose, onPredictionUp
   useEffect(() => {
     if (!sat1 || !sat2) return;
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
     setLoading(true);
     setManeuverState('idle');
-    axios.post('http://localhost:5000/api/predict/collision', {
+    axios.post(`${API_URL}/predict/collision`, {
       sat1_id: parseInt(sat1.id),
       sat2_id: parseInt(sat2.id)
     }).then(res => {

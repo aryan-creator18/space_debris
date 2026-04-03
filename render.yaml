@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: space-debris-backend
+    env: python
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && gunicorn app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production

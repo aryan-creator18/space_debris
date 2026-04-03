@@ -17,7 +17,8 @@ export default function SatelliteListPanel({ satellites, selectedSatellites, onS
     if (!searchTerm.trim()) return;
     setIsSearching(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/search?q=${encodeURIComponent(searchTerm)}`);
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await axios.get(`${API_URL}/search?q=${encodeURIComponent(searchTerm)}`);
       setGlobalResults(res.data.results || []);
     } catch (err) {
       console.error("Global search failed", err);
