@@ -62,7 +62,8 @@ def fetch_live_tles():
         url = "https://celestrak.org/SOCRATES/query.php"
         gp_url = "https://celestrak.org/GP/query?GROUP=active&FORMAT=json"
         import requests
-        r = requests.get(gp_url, timeout=8)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        r = requests.get(gp_url, headers=headers, timeout=8)
         if r.status_code == 200:
             data = r.json()
             tles = {}
@@ -317,7 +318,8 @@ def search_global():
             clean_q = query.replace(' ', '%20')
             api_url = f"https://celestrak.org/NORAD/elements/gp.php?NAME={clean_q}&FORMAT=json"
             
-        r = requests.get(api_url, timeout=5)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        r = requests.get(api_url, headers=headers, timeout=5)
         if r.status_code == 200:
             data = r.json()
             if isinstance(data, list):
