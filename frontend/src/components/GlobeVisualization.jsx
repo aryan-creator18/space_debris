@@ -90,6 +90,7 @@ export default function GlobeVisualization({
         pathDashLength={0.1}
         pathDashGap={0.05}
         pathDashAnimateTime={10000}
+        pathTransitionDuration={0}
         
         // Critical collision intersection mapping
         ringsData={intersectionPoint ? [intersectionPoint] : []}
