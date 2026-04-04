@@ -17,6 +17,8 @@ export default function GlobeVisualization({
   useEffect(() => {
     let interval;
     if (realTimeMode) {
+      // Snap instantly back to Ephemeris Epoch (True 'now')
+      setFrameIndex(0);
       // Real Time: 90 minutes / 200 points = ~27 seconds per frame advance
       interval = setInterval(() => {
         setFrameIndex(prev => (prev + 1) % 200);
