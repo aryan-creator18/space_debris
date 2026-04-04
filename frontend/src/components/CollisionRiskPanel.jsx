@@ -9,8 +9,7 @@ export default function CollisionRiskPanel({ sat1, sat2, onClose, onPredictionUp
 
   useEffect(() => {
     if (!sat1 || !sat2) return;
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://orbitra-70k2.onrender.com/api');
 
     setLoading(true);
     setManeuverState('idle');

@@ -7,7 +7,7 @@ import TelemetryTicker from './components/TelemetryTicker';
 import { Activity } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://orbitra-70k2.onrender.com/api');
 const EARTH_RADIUS_KM = 6371.0;
 
 function cartesianToLatLngAlt(x, y, z) {
