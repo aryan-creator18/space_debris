@@ -27,20 +27,25 @@ CELESTRAK_GP_URL = "https://celestrak.org/SOCRATES/query.php"
 
 # ─── Data Loading ─────────────────────────────────────────────────────────────
 DATA_PATH = os.environ.get('DATA_PATH', '../model/space_debris_with_engineered_features.csv')
-_df_cache = None
+_local_df = None
 _live_tles = {}
 _last_tle_fetch = 0
 TLE_CACHE_SECONDS = 600  # 10 min cache
 
 def get_df():
-    global _df_cache
-    if _df_cache is None:
+    global _local_df
+    if _local_df is None:
         try:
-            _df_cache = pd.read_csv(DATA_PATH)
-            print(f"Loaded {len(_df_cache)} records from CSV")
+            import os
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            csv_path = os.path.join(base_dir, '..', 'model', 'space_debris_with_engineered_features.csv')
+            # Fallback path if running directly in root terminal
+            if not os.path.exists(csv_path):
+                csv_path = 'model/space_debris_with_engineered_features.csv'
+            _local_df = pd.read_csv(csv_path)
         except Exception as e:
-            print(f"Warning: Could not load CSV ({e}), using empty DataFrame")
-            _df_cache = pd.DataFrame(columns=[
+            print(f"Failed to load dataset: {e}")
+            _local_df = pd.DataFrame(columns=[
                 'NORAD_CAT_ID','EPOCH_UNIX','MEAN_MOTION','ECCENTRICITY',
                 'INCLINATION','RA_OF_ASC_NODE','ARG_OF_PERICENTER',
                 'MEAN_ANOMALY','SEMI_MAJOR_AXIS','ORBITAL_PERIOD','ORBITAL_VELOCITY'
