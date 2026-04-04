@@ -45,12 +45,8 @@ def get_df():
             _local_df = pd.read_csv(csv_path)
         except Exception as e:
             print(f"Failed to load dataset: {e}")
-            _local_df = pd.DataFrame(columns=[
-                'NORAD_CAT_ID','EPOCH_UNIX','MEAN_MOTION','ECCENTRICITY',
-                'INCLINATION','RA_OF_ASC_NODE','ARG_OF_PERICENTER',
-                'MEAN_ANOMALY','SEMI_MAJOR_AXIS','ORBITAL_PERIOD','ORBITAL_VELOCITY'
-            ])
-    return _df_cache
+            _local_df = pd.DataFrame({'NORAD_CAT_ID': [25544, 107, 506]})
+    return _local_df
 
 def fetch_live_tles():
     """Fetch active debris TLEs from CelesTrak GP data (JSON format)."""
