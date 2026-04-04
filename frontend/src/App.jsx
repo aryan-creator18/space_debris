@@ -90,15 +90,26 @@ function App() {
     });
   };
 
-  const fetchAndAddGlobalSatellite = async (satelliteId) => {
-    const existing = satellites.find(s => s.id === satelliteId);
+  const fetchAndAddGlobalSatellite = async (satellitePayload) => {
+    const isObject = typeof satellitePayload === 'object' && satellitePayload !== null;
+    const searchId = isObject ? satellitePayload.id : satellitePayload;
+
+    const existing = satellites.find(s => s.id === searchId.toString());
     if (existing) {
       handleSelectSatellite(existing);
       return;
     }
 
     try {
-      const { data } = await axios.get(`${API_URL}/orbit/${satelliteId}`);
+      let data = null;
+      if (isObject && satellitePayload._tlePayload) {
+        // Hydrate backend memory dynamically with the browser-secured payload
+        const res = await axios.post(`${API_URL}/orbit/inject`, satellitePayload._tlePayload);
+        data = res.data;
+      } else {
+        const res = await axios.get(`${API_URL}/orbit/${searchId}`);
+        data = res.data;
+      }
       const path = data.orbit_points.map(pt => cartesianToLatLngAlt(pt[0], pt[1], pt[2]));
       let currentPos = { lat: 0, lng: 0, alt: 0.1 };
       if (path.length > 0) currentPos = path[0];

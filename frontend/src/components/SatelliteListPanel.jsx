@@ -17,9 +17,24 @@ export default function SatelliteListPanel({ satellites, selectedSatellites, onS
     if (!searchTerm.trim()) return;
     setIsSearching(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      const res = await axios.get(`${API_URL}/search?q=${encodeURIComponent(searchTerm)}`);
-      setGlobalResults(res.data.results || []);
+      let queryUrl = '';
+      if (!isNaN(searchTerm)) {
+        queryUrl = `https://celestrak.org/NORAD/elements/gp.php?CATNR=${searchTerm}&FORMAT=json`;
+      } else {
+        queryUrl = `https://celestrak.org/NORAD/elements/gp.php?NAME=${encodeURIComponent(searchTerm)}&FORMAT=json`;
+      }
+      
+      const res = await axios.get(queryUrl);
+      let formattedResults = [];
+      if (res.data && Array.isArray(res.data)) {
+        formattedResults = res.data.slice(0, 10).map(obj => ({
+          id: obj.NORAD_CAT_ID.toString(),
+          name: obj.OBJECT_NAME || `NORAD ${obj.NORAD_CAT_ID}`,
+          type: 'Live Browser Fetch',
+          _tlePayload: obj
+        }));
+      }
+      setGlobalResults(formattedResults);
     } catch (err) {
       console.error("Global search failed", err);
     } finally {
@@ -85,7 +100,7 @@ export default function SatelliteListPanel({ satellites, selectedSatellites, onS
               <div 
                 key={`global-${res.id}`}
                 onClick={() => {
-                  onGlobalSelect(res.id);
+                  onGlobalSelect(res._tlePayload ? res : res.id);
                   // Optional: clear search after picking
                   // setGlobalResults([]);
                 }}

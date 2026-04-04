@@ -352,6 +352,49 @@ def search_global():
             
     return jsonify({'results': results})
 
+@app.route('/api/orbit/inject', methods=['POST', 'OPTIONS'])
+def inject_orbit():
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+        
+    sat_data = request.json
+    sat_id = int(sat_data.get('NORAD_CAT_ID'))
+    
+    # Dynamically inject into backend memory to bypass Celestrak Cloud IPs!
+    _live_tles[sat_id] = sat_data
+
+    points = propagate_orbit(sat_data, steps=200)
+
+    a = get_sma(sat_data)
+    alt = a - EARTH_RADIUS_KM
+    v = math.sqrt(MU / a)
+
+    if alt < 2000:
+        regime = 'LEO'
+    elif alt < 35000:
+        regime = 'MEO'
+    elif alt < 36500:
+        regime = 'GEO'
+    else:
+        regime = 'HEO'
+
+    return jsonify({
+        'sat_id': int(sat_id),
+        'orbit_points': points,
+        'info': {
+            'inclination': round(float(sat_data['INCLINATION']), 4),
+            'eccentricity': round(float(sat_data['ECCENTRICITY']), 7),
+            'period_min': round(1440.0 / float(sat_data['MEAN_MOTION']), 2) if 'MEAN_MOTION' in sat_data else 90.0,
+            'semi_major_axis_km': round(a, 2),
+            'altitude_km': round(alt, 2),
+            'velocity_km_s': round(v, 3),
+            'regime': regime,
+            'mean_motion': round(float(sat_data['MEAN_MOTION']), 6),
+            'raan': round(float(sat_data.get('RA_OF_ASC_NODE', 0)), 4),
+            'arg_perigee': round(float(sat_data.get('ARG_OF_PERICENTER', 0)), 4),
+        }
+    })
+
 @app.route('/api/orbit/<int:sat_id>', methods=['GET'])
 def get_orbit(sat_id):
     sat_data = get_sat_data(sat_id)
